@@ -165,7 +165,8 @@ const OPCODE opcodetable[]=
     /*0x6D*/    {4, adc6502,    abs6502},
     /*0x6E*/    {6, ror6502,    abs6502},
     /*0x6F*/    {2, nop6502,    implied6502},
-    /*0x70*/    {2, bvs6502,    implied6502},
+    /*0x70*/    //{2, bvs6502,    implied6502},
+	/*0x70*/    {2, bvs6502,    relative6502},
     /*0x71*/    {5, adc6502,    indy6502},
     /*0x72*/    {3, adc6502,    indzp6502},
     /*0x73*/    {2, nop6502,    implied6502},
@@ -279,6 +280,7 @@ const OPCODE opcodetable[]=
     /*0xDF*/    {2, nop6502,    implied6502},
     /*0xE0*/    {3, cpx6502,    immediate6502},
     /*0xE1*/    {6, sbc6502,    indx6502},
+	/*0xE1*/    //{6, sbc6502,    indabsx6502},
     /*0xE2*/    {2, nop6502,    implied6502},
     /*0xE3*/    {2, nop6502,    implied6502},
     /*0xE4*/    {3, cpx6502,    zp6502},
@@ -561,7 +563,7 @@ void zpy6502(void)
 /* (ZP,X) */
 void indx6502(void)
 {
-    value = get6502memory(PC) + Y;
+    value = get6502memory(PC) + X;
     PC++;
     savepc  = get6502memory(value);
     savepc += get6502memory(value + 1) << 8;
@@ -604,6 +606,13 @@ void indzp6502(void)
 /* Instructions */
 void adc6502(void)
 {
+	//----------------
+	unsigned char saveDecimalFlag = 0;
+	if ( P & 0x08 ) {
+		saveDecimalFlag = P & 0x08;
+		P &= ~0x08;
+	}
+	//----------------
     opcodetable[opcode].adrmode();
     value = get6502memory(savepc);
     saveflags=(P & 0x01);
@@ -659,6 +668,10 @@ void adc6502(void)
     {
         P &= 0x7f;
     }
+	//--------------
+	P |= saveDecimalFlag;	
+	//--------------
+	
 }
 //-------------------------------------------------------------------------------
 void and6502(void)
@@ -1490,6 +1503,13 @@ void rts6502(void)
 //-------------------------------------------------------------------------------
 void sbc6502(void)
 {
+	//----------------
+	unsigned char saveDecimalFlag = 0;
+	if ( P & 0x08 ) {
+		saveDecimalFlag = P & 0x08;
+		P &= ~0x08;
+	}
+	//----------------
     opcodetable[opcode].adrmode();
 //      value = gameImage[savepc] ^ 0xff;
     value = get6502memory(savepc) ^ 0xFF;
@@ -1547,6 +1567,9 @@ void sbc6502(void)
     {
         P &= 0x7f;
     }
+	//--------------
+	P |= saveDecimalFlag;	
+	//--------------
 }
 //-------------------------------------------------------------------------------
 void sec6502(void)
